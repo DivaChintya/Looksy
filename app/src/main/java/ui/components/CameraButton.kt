@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun CameraButton() {
+fun CameraButton(onCaptureClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -20,7 +20,7 @@ fun CameraButton() {
         contentAlignment = Alignment.BottomStart
     ) {
         FloatingActionButton(
-            onClick = { /* TODO: Aksi untuk Capture */ },
+            onClick = { onCaptureClick() },
             modifier = Modifier.size(56.dp),
             containerColor = Color(0xCCFFFFFF)
         ) {
