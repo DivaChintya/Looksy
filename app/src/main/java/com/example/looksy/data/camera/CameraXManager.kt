@@ -1,105 +1,63 @@
 package com.example.looksy.data.camera
 
+import android.content.ContentValues
 import android.content.Context
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.Preview
+import android.os.Build
+import android.provider.MediaStore
+import android.util.Log
+import android.widget.Toast
+import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
-import java.util.concurrent.ExecutorService
-
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import android.content.ContentValues
-import android.provider.MediaStore
-import android.os.Build
-import android.widget.Toast
-import android.util.Log
 
 class CameraXManager(private val context: Context) {
 
-    private val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+    private var imageCapture: ImageCapture? = null
+    private var cameraProvider: ProcessCameraProvider? = null
 
+    // HANYA GUNAKAN SATU FUNGSI INI. HAPUS YANG LAINNYA.
     fun startCamera(
         lifecycleOwner: LifecycleOwner,
-        previewView: PreviewView,
-        cameraExecutor: ExecutorService
+        previewView: PreviewView
     ) {
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            // 1. Preview Use Case: Menghubungkan output kamera ke PreviewView (Surface)
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                cameraProvider.unbindAll()
-
-                // 2. Bind: Menghubungkan use case Preview ke siklus hidup (lifecycle)
-                cameraProvider.bindToLifecycle(
-                    lifecycleOwner,
-                    cameraSelector,
-                    preview
-                )
-            } catch(exc: Exception) {
-                exc.printStackTrace()
-            }
-        }, ContextCompat.getMainExecutor(context))
-    }
-
-    // Fungsi untuk membersihkan sumber daya kamera
-    fun stopCamera() {
-        // Unbind semua use case
-        cameraProviderFuture.get().unbindAll()
-    }
-
-    private var imageCapture: ImageCapture? = null
-
-    fun startCamera(previewView: PreviewView, lifecycleOwner: LifecycleOwner) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
 
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-
-            // 1. Inisialisasi Preview
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
-
-            // 2. Inisialisasi ImageCapture (Tugas Baru)
-            imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .build()
-
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
             try {
-                cameraProvider.unbindAll()
-                // 3. Bind Preview dan ImageCapture ke Lifecycle
-                cameraProvider.bindToLifecycle(
+                cameraProvider = cameraProviderFuture.get()
+
+                // Preview Config
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
+                }
+
+                // ImageCapture Config
+                imageCapture = ImageCapture.Builder()
+                    .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                    .build()
+
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(
                     lifecycleOwner,
                     cameraSelector,
                     preview,
                     imageCapture
                 )
+
             } catch (exc: Exception) {
                 Log.e("CameraX", "Use case binding failed", exc)
             }
         }, ContextCompat.getMainExecutor(context))
     }
 
-    // 4. Fungsi untuk mengambil foto
     fun takePhoto() {
         val imageCapture = imageCapture ?: return
 
-        // Buat nama file unik berdasarkan waktu
         val name = "Looksy_${System.currentTimeMillis()}.jpg"
-
-        // Konfigurasi MediaStore untuk simpan ke galeri
         val contentValues = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, name)
             put(MediaStore.MediaColumns.MIME_TYPE, "image/jpeg")
@@ -117,7 +75,7 @@ class CameraXManager(private val context: Context) {
             ContextCompat.getMainExecutor(context),
             object : ImageCapture.OnImageSavedCallback {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    Toast.makeText(context, "Foto berhasil disimpan ke Galeri!", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Foto berhasil disimpan!", Toast.LENGTH_SHORT).show()
                 }
                 override fun onError(exc: ImageCaptureException) {
                     Log.e("CameraX", "Gagal: ${exc.message}", exc)
@@ -126,4 +84,7 @@ class CameraXManager(private val context: Context) {
         )
     }
 
+    fun stopCamera() {
+        cameraProvider?.unbindAll()
+    }
 }
