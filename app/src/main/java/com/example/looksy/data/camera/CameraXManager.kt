@@ -15,10 +15,8 @@ import android.content.ContentValues
 import android.provider.MediaStore
 import android.os.Build
 import android.widget.Toast
-
 import android.util.Log
 
-// Class ini mengelola semua logika CameraX (Kamera data layer)
 class CameraXManager(private val context: Context) {
 
     private val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -46,7 +44,6 @@ class CameraXManager(private val context: Context) {
                     lifecycleOwner,
                     cameraSelector,
                     preview
-                    // TODO: Minggu 2: ImageAnalysis akan ditambahkan di sini
                 )
             } catch(exc: Exception) {
                 exc.printStackTrace()
@@ -123,7 +120,7 @@ class CameraXManager(private val context: Context) {
                     Toast.makeText(context, "Foto berhasil disimpan ke Galeri!", Toast.LENGTH_SHORT).show()
                 }
                 override fun onError(exc: ImageCaptureException) {
-                    Log.e("CameraX", "Gagal mengambil foto: ${exc.message}", exc)
+                    Log.e("CameraX", "Gagal: ${exc.message}", exc)
                 }
             }
         )
