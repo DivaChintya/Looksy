@@ -1,61 +1,49 @@
 package com.example.looksy.ui.screen.camera
 
-import android.view.View
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
-import androidx.camera.view.PreviewView
-import com.example.looksy.data.camera.CameraXManager // Import CameraXManager
-import com.example.looksy.ui.components.FavoriteButton
+import com.example.looksy.data.camera.CameraXManager
+import com.example.looksy.ui.components.CameraButton
 import com.example.looksy.ui.components.MicrophoneButton
 import java.util.concurrent.Executors
 
 @Composable
 fun CameraScreen(isCameraPermissionGranted: Boolean) {
-
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
-    val previewView = remember { PreviewView(context) }
 
-    // Membuat instance CameraX Manager
+    // Gunakan remember agar executor tidak dibuat ulang setiap kali recompose
+    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
     val cameraManager = remember { CameraXManager(context) }
 
-    // Efek yang berjalan berdasarkan siklus hidup
-    DisposableEffect(lifecycleOwner, isCameraPermissionGranted) {
-
-        if (isCameraPermissionGranted) {
-            // Meminta Manager untuk memulai kamera
-            cameraManager.startCamera(
-                lifecycleOwner,
-                previewView,
-                cameraExecutor
-            )
-        }
-
+    DisposableEffect(lifecycleOwner) {
         onDispose {
-            // Membersihkan saat Composable keluar (layar ditutup)
+            // Memastikan resource dibersihkan saat layar ditutup
             cameraManager.stopCamera()
             cameraExecutor.shutdown()
         }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // Menampilkan Live Camera Feed
-        AndroidView(
-            factory = { previewView },
-            modifier = Modifier.fillMaxSize()
-        )
-
-        // Overlay UI
+        if (isCameraPermissionGranted) {
+            AndroidView(
+                factory = { ctx ->
+                    PreviewView(ctx).apply {
+                        cameraManager.startCamera(lifecycleOwner, this)
+                    }
+                },
+                modifier = Modifier.fillMaxSize()
+            )
+        }
         MicrophoneButton()
-        FavoriteButton()
+        CameraButton(onCaptureClick = {
+            cameraManager.takePhoto()
+        })
     }
 }
