@@ -73,9 +73,9 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended")
 
     // --- TensorFlow Lite (TFLite) & Vision ---
-//    implementation("org.tensorflow:tensorflow-lite:${tfliteVersion}")
-//    implementation("org.tensorflow:tensorflow-lite-support:0.1.0")
-//    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
+    // Library untuk memproses gambar
+    implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
 
     // --- Kotlin Coroutines ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
