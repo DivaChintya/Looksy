@@ -16,6 +16,7 @@ class CameraXManager(private val context: Context) {
 
     private var imageCapture: ImageCapture? = null
     private var cameraProvider: ProcessCameraProvider? = null
+    private var imageAnalyzer: ImageAnalysis? = null //Week 2
 
     // HANYA GUNAKAN SATU FUNGSI INI. HAPUS YANG LAINNYA.
     fun startCamera(
@@ -38,6 +39,18 @@ class CameraXManager(private val context: Context) {
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .build()
 
+        // Tambahkan Analyzer
+        imageAnalyzer = ImageAnalysis.Builder()
+            .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .build()
+            .also {
+                it.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
+                    // DI SINI TEMPAT KITA MENGIRIM GAMBAR KE AI
+                    // Setelah selesai, jangan lupa tutup imageProxy
+                    imageProxy.close()
+                }
+            }
+
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
                 cameraProvider?.unbindAll()
@@ -52,6 +65,7 @@ class CameraXManager(private val context: Context) {
                 Log.e("CameraX", "Use case binding failed", exc)
             }
         }, ContextCompat.getMainExecutor(context))
+
     }
 
     fun takePhoto() {
