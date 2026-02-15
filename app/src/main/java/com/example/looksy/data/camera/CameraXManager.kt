@@ -11,11 +11,14 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import android.graphics.Bitmap
+import org.tensorflow.lite.task.vision.detector.Detection
 
 class CameraXManager(private val context: Context) {
 
     private var imageCapture: ImageCapture? = null
     private var cameraProvider: ProcessCameraProvider? = null
+    private var objectDetectorHelper: ObjectDetectorHelper? = null //week 2
     private var imageAnalyzer: ImageAnalysis? = null //Week 2
 
     // HANYA GUNAKAN SATU FUNGSI INI. HAPUS YANG LAINNYA.
@@ -38,6 +41,21 @@ class CameraXManager(private val context: Context) {
                 imageCapture = ImageCapture.Builder()
                     .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
                     .build()
+                // Inisialisasi listener untuk menerima hasil deteksi
+                val detectorListener = object : ObjectDetectorHelper.DetectorListener {
+                    override fun onError(error: String) {
+                        Log.e("LooksyAI", "Error: $error")
+                    }
+
+                    override fun onResults(results: MutableList<Detection>?, inferenceTime: Long, imageHeight: Int, imageWidth: Int) {
+                        // Logika untuk menampilkan koordinat atau menggambar mata di sini
+                        results?.forEach {
+                            Log.d("LooksyAI", "Objek ditemukan: ${it.categories.firstOrNull()?.label}")
+                        }
+                    }
+                }
+
+                objectDetectorHelper = ObjectDetectorHelper(context, detectorListener)
 
         // Tambahkan Analyzer
         imageAnalyzer = ImageAnalysis.Builder()
@@ -45,11 +63,17 @@ class CameraXManager(private val context: Context) {
             .build()
             .also {
                 it.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
-                    // DI SINI TEMPAT KITA MENGIRIM GAMBAR KE AI
-                    // Setelah selesai, jangan lupa tutup imageProxy
+                    // Konversi imageProxy ke Bitmap dan kirim ke AI
+                    val bitmapBuffer = Bitmap.createBitmap(
+                        imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888
+                    )
+                    imageProxy.use { bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
+
+                    objectDetectorHelper?.detect(bitmapBuffer, imageProxy.imageInfo.rotationDegrees)
                     imageProxy.close()
                 }
             }
+
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
@@ -58,7 +82,8 @@ class CameraXManager(private val context: Context) {
                     lifecycleOwner,
                     cameraSelector,
                     preview,
-                    imageCapture
+                    imageCapture,
+                    imageAnalyzer //untuk deteksi AI
                 )
 
             } catch (exc: Exception) {
