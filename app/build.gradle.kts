@@ -37,6 +37,11 @@ android {
     buildFeatures {
         compose = true // Pertahankan fitur Compose
     }
+
+    @Suppress("UnstableApiUsage")
+    androidResources {
+        noCompress("tflite")
+    }
 }
 
 // --- Dependensi Inti Android & Compose (Direvisi) ---
@@ -75,7 +80,9 @@ dependencies {
     // --- TensorFlow Lite (TFLite) & Vision ---
     // Library untuk memproses gambar
     implementation("org.tensorflow:tensorflow-lite-task-vision:0.4.4")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+//    implementation("org.tensorflow:tensorflow-lite-gpu:2.14.0")
+    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
+    implementation("org.tensorflow:tensorflow-lite-metadata:0.4.4")
 
     // --- Kotlin Coroutines ---
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")

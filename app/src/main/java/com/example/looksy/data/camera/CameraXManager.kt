@@ -60,20 +60,30 @@ class CameraXManager(private val context: Context) {
         // Tambahkan Analyzer
         imageAnalyzer = ImageAnalysis.Builder()
             .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+            .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_RGBA_8888)
             .build()
             .also {
                 it.setAnalyzer(ContextCompat.getMainExecutor(context)) { imageProxy ->
                     // Konversi imageProxy ke Bitmap dan kirim ke AI
-                    val bitmapBuffer = Bitmap.createBitmap(
-                        imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888
-                    )
-                    imageProxy.use { bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer) }
+                    try {
+                        val bitmapBuffer = Bitmap.createBitmap(
+                            imageProxy.width, imageProxy.height, Bitmap.Config.ARGB_8888
+                        )
+                        // Mengambil buffer dari plane pertama (RGBA)
+                        bitmapBuffer.copyPixelsFromBuffer(imageProxy.planes[0].buffer)
 
-                    objectDetectorHelper?.detect(bitmapBuffer, imageProxy.imageInfo.rotationDegrees)
-                    imageProxy.close()
+                        objectDetectorHelper?.detect(
+                            bitmapBuffer,
+                            imageProxy.imageInfo.rotationDegrees
+                        )
+                    } catch (e: Exception) {
+                        Log.e("CameraX", "Analisis gagal: ${e.message}")
+                    } finally {
+                        // ImageProxy HARUS ditutup di sini agar frame berikutnya bisa masuk
+                        imageProxy.close()
+                    }
                 }
             }
-
 
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
